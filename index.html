@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="営業管理">
+<meta name="theme-color" content="#0d0d1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../sales-staff/icon-180.png">
+<title>営業管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d1a; --bg2:#13132a; --bg3:#1a1a35;
+  --card:#1e1e38; --card2:#252545;
+  --accent:#e8a020; --accent2:#f0c060; --accent-pale:rgba(232,160,32,0.12);
+  --green:#2ecc71; --red:#e74c3c; --blue:#3498db; --purple:#9b59b6;
+  --text:#e8e8f0; --text2:#9090b0; --text3:#5a5a7a;
+  --border:#2a2a4a;
+  --sim:#3498db; --spo:#9b59b6; --hikari:#2ecc71; --home5g:#e67e22; --denki:#f1c40f; --card-c:#e74c3c;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── Lock screen ── */
+#lockscreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:24px;}
+.lock-logo{font-family:'DM Serif Display',serif;font-size:28px;color:var(--accent);letter-spacing:0.05em;}
+.lock-sub{font-size:13px;color:var(--text2);}
+.lock-form{display:flex;flex-direction:column;gap:12px;width:280px;}
+.lock-input{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:16px;color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;text-align:center;letter-spacing:0.2em;}
+.lock-input:focus{border-color:var(--accent);}
+.lock-btn{background:var(--accent);color:#0d0d1a;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;}
+.lock-err{color:var(--red);font-size:13px;text-align:center;display:none;}
+
+/* ── Layout ── */
+#app{display:flex;height:100vh;overflow:hidden;}
+#sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+.sidebar-logo h1{font-family:'DM Serif Display',serif;font-size:16px;color:var(--accent);letter-spacing:0.04em;}
+.sidebar-logo p{font-size:10px;color:var(--text3);margin-top:2px;}
+.snav{padding:10px 8px;}
+.snav-label{font-size:9px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase;padding:0 10px;margin:8px 0 4px;}
+.snav-btn{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;background:none;border:none;color:var(--text2);font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;border-radius:8px;transition:all 0.15s;text-align:left;}
+.snav-btn:hover{background:var(--bg3);color:var(--text);}
+.snav-btn.active{background:var(--accent-pale);color:var(--accent);font-weight:700;}
+.snav-btn .ico{font-size:16px;width:20px;text-align:center;}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;}
+#topbar h2{font-size:16px;font-weight:700;color:var(--text);}
+#topbar .meta{font-size:12px;color:var(--text2);}
+#content{flex:1;overflow-y:auto;padding:20px 24px;}
+
+/* ── Cards / UI ── */
+.page{display:none;}
+.page.active{display:block;}
+.pg-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:4px;}
+.pg-sub{font-size:13px;color:var(--text2);margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.stat-card .label{font-size:11px;color:var(--text2);margin-bottom:6px;}
+.stat-card .val{font-size:24px;font-weight:700;color:var(--accent);font-family:'DM Serif Display',serif;}
+.stat-card .sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* product badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-sim{background:rgba(52,152,219,0.2);color:var(--sim);}
+.badge-spo{background:rgba(155,89,182,0.2);color:var(--purple);}
+.badge-hikari{background:rgba(46,204,113,0.2);color:var(--green);}
+.badge-home5g{background:rgba(230,126,34,0.2);color:var(--home5g);}
+.badge-denki{background:rgba(241,196,15,0.2);color:var(--denki);}
+.badge-card{background:rgba(231,76,60,0.2);color:var(--red);}
+
+/* form elements */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;color:var(--text2);font-weight:700;}
+.field input,.field select,.field textarea{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color 0.15s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field select option{background:var(--bg3);}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;font-weight:700;cursor:pointer;border:none;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#0d0d1a;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--bg3);}
+.btn-danger{background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.3);}
+.btn-danger:hover{background:rgba(231,76,60,0.25);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:11px;color:var(--text3);font-weight:700;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;letter-spacing:0.05em;}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--accent-pale);}
+.tbl td.num{text-align:right;font-weight:700;}
+
+/* product input grid */
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+.prod-field{display:flex;flex-direction:column;gap:3px;}
+.prod-field label{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-align:center;}
+.prod-field input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 8px;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;text-align:center;}
+.prod-field input:focus{border-color:var(--accent);}
+
+/* month selector */
+.month-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.month-nav button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:7px;cursor:pointer;font-size:13px;}
+.month-nav button:hover{border-color:var(--accent);color:var(--accent);}
+.month-nav .cur{font-size:16px;font-weight:700;color:var(--accent);min-width:120px;text-align:center;}
+
+/* mobile */
+#mobile-tabbar{display:none;}
+@media(max-width:768px){
+  #sidebar{display:none;}
+  #app{flex-direction:column;}
+  #main{padding-bottom:64px;}
+  #content{padding:14px 12px;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .form-grid{grid-template-columns:1fr;}
+  .prod-grid{grid-template-columns:repeat(2,1fr);}
+  #mobile-tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;height:64px;background:var(--bg2);border-top:1px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom);}
+  .mtab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;font-family:'Noto Sans JP',sans-serif;}
+  .mtab.active{color:var(--accent);}
+  .mtab .mico{font-size:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Lock Screen ── -->
+<div id="lockscreen">
+  <div class="lock-logo">営業管理システム</div>
+  <div class="lock-sub">管理者専用 · パスワードを入力してください</div>
+  <div class="lock-form">
+    <input type="password" id="pw-input" class="lock-input" placeholder="••••••" maxlength="20">
+    <div class="lock-err" id="pw-err">パスワードが違います</div>
+    <button class="lock-btn" onclick="checkPW()">ログイン</button>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <h1>営業管理</h1>
+      <p>Sales Management</p>
+    </div>
+    <div class="snav">
+      <div class="snav-label">メニュー</div>
+      <button class="snav-btn active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="ico">📊</span>ダッシュボード</button>
+      <button class="snav-btn" onclick="showPage('staff')" id="nav-staff"><span class="ico">👤</span>スタッフ管理</button>
+      <button class="snav-btn" onclick="showPage('shift')" id="nav-shift"><span class="ico">📅</span>シフト管理</button>
+      <button class="snav-btn" onclick="showPage('results')" id="nav-results"><span class="ico">📋</span>稼働実績</button>
+      <button class="snav-btn" onclick="showPage('report')" id="nav-report"><span class="ico">💰</span>報酬・集計</button>
+      <div class="snav-label">設定</div>
+      <button class="snav-btn" onclick="showPage('settings')" id="nav-settings"><span class="ico">⚙️</span>設定・単価</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="topbar">
+      <h2 id="page-title">ダッシュボード</h2>
+      <div class="meta" id="topbar-meta"></div>
+    </div>
+    <div id="content">
+
+      <!-- ── Dashboard ── -->
+      <div id="page-dashboard" class="page active">
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)">◀</button>
+          <div class="cur" id="cur-month"></div>
+          <button onclick="changeMonth(1)">▶</button>
+        </div>
+        <div class="stat-grid" id="dash-stats"></div>
+        <div class="card">
+          <div class="card-title">📦 商材別獲得件数</div>
+          <div id="dash-products"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">👥 スタッフ別実績（今月）</div>
+          <table class="tbl" id="dash-staff-tbl">
+            <thead><tr><th>スタッフ</th><th>稼働日数</th><th>総件数</th><th>報酬合計</th></tr></thead>
+            <tbody id="dash-staff-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Staff ── -->
+      <div id="page-staff" class="page">
+        <div class="pg-title">スタッフ管理</div>
+        <div class="pg-sub">代理店スタッフの登録・編集・単価設定</div>
+        <div class="card">
+          <div class="card-title">＋ スタッフ登録</div>
+          <div class="form-grid">
+            <div class="field"><label>氏名</label><input type="text" id="sf-name" placeholder="山田 太郎"></div>
+            <div class="field"><label>よみがな</label><input type="text" id="sf-kana" placeholder="やまだ たろう"></div>
+            <div class="field"><label>電話番号</label><input type="tel" id="sf-tel" placeholder="090-0000-0000"></div>
+            <div class="field"><label>所属・メモ</label><input type="text" id="sf-note" placeholder="東京チーム"></div>
+          </div>
+          <div class="card-title" style="margin-top:14px;">💴 商材別単価設定（円/件）</div>
+          <div class="prod-grid">
+            <div class="prod-field"><label class="badge badge-sim">SIM</label><input type="number" id="sf-p-sim" value="3000" min="0"></div>
+            <div class="prod-field"><label class="badge badge-spo">SIMポ</label><input type="number" id="sf-p-spo" value="3000" min="0"></div>
+            <div class="prod-field"><label class="badge badge-hikari">光</label><input type="number" id="sf-p-hikari" value="5000" min="0"></div>
+            <div class="prod-field"><label class="badge badge-home5g">Home5G</label><input type="number" id="sf-p-home5g" value="4000" min="0"></div>
+            <div class="prod-field"><label class="badge badge-denki">電気</label><input type="number" id="sf-p-denki" value="2000" min="0"></div>
+            <div class="prod-field"><label class="badge badge-card">カード</label><input type="number" id="sf-p-card" value="2000" min="0"></div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="saveStaff()">💾 登録する</button>
+            <button class="btn btn-secondary" onclick="clearStaffForm()">クリア</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">👥 登録スタッフ一覧</div>
+          <table class="tbl">
+            <thead><tr><th>氏名</th><th>電話</th><th>メモ</th><th>SIM</th><th>光</th><th>操作</th></tr></thead>
+            <tbody id="staff-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Shift ── -->
+      <div id="page-shift" class="page">
+        <div class="pg-title">シフト管理</div>
+        <div class="pg-sub">稼働予定の登録・勤務地の管理</div>
+        <div class="card">
+          <div class="card-title">＋ シフト登録</div>
+          <div class="form-grid">
+            <div class="field"><label>スタッフ</label>
+              <select id="sh-staff"><option value="">選択してください</option></select>
+            </div>
+            <div class="field"><label>日付</label><input type="date" id="sh-date"></div>
+            <div class="field"><label>勤務地</label><input type="text" id="sh-location" placeholder="新宿店 / 渋谷イベント"></div>
+            <div class="field"><label>シフト種別</label>
+              <select id="sh-type">
+                <option value="通常">通常</option>
+                <option value="イベント">イベント</option>
+                <option value="研修">研修</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;"><label>備考</label><input type="text" id="sh-note" placeholder="メモ・特記事項"></div>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="saveShift()">💾 登録する</button>
+        </div>
+        <div class="month-nav">
+          <button onclick="changeShiftMonth(-1)">◀</button>
+          <div class="cur" id="shift-month-label"></div>
+          <button onclick="changeShiftMonth(1)">▶</button>
+        </div>
+        <div class="card">
+          <div class="card-title">📅 シフト一覧</div>
+          <table class="tbl">
+            <thead><tr><th>日付</th><th>スタッフ</th><th>勤務地</th><th>種別</th><th>稼働</th><th>操作</th></tr></thead>
+            <tbody id="shift-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Results ── -->
+      <div id="page-results" class="page">
+        <div class="pg-title">稼働実績</div>
+        <div class="pg-sub">従業員フォームからの入力データ一覧</div>
+        <div class="month-nav">
+          <button onclick="changeResultMonth(-1)">◀</button>
+          <div class="cur" id="result-month-label"></div>
+          <button onclick="changeResultMonth(1)">▶</button>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+            <select id="res-filter-staff" class="field" style="width:160px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Noto Sans JP',sans-serif;" onchange="renderResults()">
+              <option value="">全スタッフ</option>
+            </select>
+          </div>
+          <table class="tbl" id="results-tbl">
+            <thead><tr><th>日付</th><th>スタッフ</th><th>勤務地</th><th>出勤</th><th>退勤</th><th>SIM</th><th>SIMポ</th><th>光</th><th>5G</th><th>電気</th><th>カード</th><th>経費</th><th>備考</th></tr></thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Report ── -->
+      <div id="page-report" class="page">
+        <div class="pg-title">報酬・集計</div>
+        <div class="pg-sub">スタッフ別・月別の報酬計算</div>
+        <div class="month-nav">
+          <button onclick="changeReportMonth(-1)">◀</button>
+          <div class="cur" id="report-month-label"></div>
+          <button onclick="changeReportMonth(1)">▶</button>
+        </div>
+        <div id="report-content"></div>
+      </div>
+
+      <!-- ── Settings ── -->
+      <div id="page-settings" class="page">
+        <div class="pg-title">設定・単価</div>
+        <div class="pg-sub">デフォルト単価・パスワード・勤務地の管理</div>
+        <div class="card">
+          <div class="card-title">💴 デフォルト単価（新規スタッフ登録時の初期値）</div>
+          <div class="prod-grid">
+            <div class="prod-field"><label class="badge badge-sim">SIM</label><input type="number" id="def-sim" min="0"></div>
+            <div class="prod-field"><label class="badge badge-spo">SIMポ</label><input type="number" id="def-spo" min="0"></div>
+            <div class="prod-field"><label class="badge badge-hikari">光</label><input type="number" id="def-hikari" min="0"></div>
+            <div class="prod-field"><label class="badge badge-home5g">Home5G</label><input type="number" id="def-home5g" min="0"></div>
+            <div class="prod-field"><label class="badge badge-denki">電気</label><input type="number" id="def-denki" min="0"></div>
+            <div class="prod-field"><label class="badge badge-card">カード</label><input type="number" id="def-card" min="0"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:14px;" onclick="saveDefaults()">💾 保存</button>
+        </div>
+        <div class="card">
+          <div class="card-title">🔐 管理者パスワード変更</div>
+          <div class="form-grid">
+            <div class="field"><label>現在のパスワード</label><input type="password" id="pw-old"></div>
+            <div class="field"><label>新しいパスワード</label><input type="password" id="pw-new"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="changePW()">変更する</button>
+          <div id="pw-msg" style="margin-top:8px;font-size:13px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📍 よく使う勤務地</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input type="text" id="loc-input" placeholder="勤務地を追加" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;">
+            <button class="btn btn-primary btn-sm" onclick="addLocation()">追加</button>
+          </div>
+          <div id="locations-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Mobile tab bar -->
+<div id="mobile-tabbar">
+  <button class="mtab active" id="mtab-dashboard" onclick="showPage('dashboard')"><span class="mico">📊</span>集計</button>
+  <button class="mtab" id="mtab-staff" onclick="showPage('staff')"><span class="mico">👤</span>スタッフ</button>
+  <button class="mtab" id="mtab-shift" onclick="showPage('shift')"><span class="mico">📅</span>シフト</button>
+  <button class="mtab" id="mtab-results" onclick="showPage('results')"><span class="mico">📋</span>実績</button>
+  <button class="mtab" id="mtab-report" onclick="showPage('report')"><span class="mico">💰</span>報酬</button>
+</div>
+
+<div id="notif" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);color:var(--accent);padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:9999;border:1px solid var(--border);"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBnqF4V2zIpbf0fv8glcYdD4lugHQtU-A0",
+  authDomain: "business-management-2edc6.firebaseapp.com",
+  databaseURL: "https://business-management-2edc6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "business-management-2edc6",
+  storageBucket: "business-management-2edc6.firebasestorage.app",
+  messagingSenderId: "327233373676",
+  appId: "1:327233373676:web:0948c7281ee25674cbecc9",
+  measurementId: "G-SM4FEGLLC6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ── State ──
+let staff = {};
+let shifts = {};
+let results = {};
+let settings = { password:'1234', defaults:{sim:3000,spo:3000,hikari:5000,home5g:4000,denki:2000,card:2000}, locations:[] };
+let editingStaffId = null;
+const PRODUCTS = ['sim','spo','hikari','home5g','denki','card'];
+const PROD_LABELS = {sim:'SIM',spo:'SIMポ',hikari:'光',home5g:'Home5G',denki:'電気',card:'カード'};
+
+let curMonth = new Date(); curMonth.setDate(1);
+let shiftMonth = new Date(); shiftMonth.setDate(1);
+let resultMonth = new Date(); resultMonth.setDate(1);
+let reportMonth = new Date(); reportMonth.setDate(1);
+
+// ── Firebase listeners ──
+onValue(ref(db,'staff'), snap => { staff = snap.val()||{}; renderStaffList(); updateStaffSelects(); renderDashboard(); renderReport(); });
+onValue(ref(db,'shifts'), snap => { shifts = snap.val()||{}; renderShifts(); renderDashboard(); });
+onValue(ref(db,'results'), snap => { results = snap.val()||{}; renderResults(); renderDashboard(); renderReport(); });
+onValue(ref(db,'settings'), snap => {
+  if(snap.val()) settings = {...settings, ...snap.val()};
+  loadSettingsForm();
+});
+
+// ── Password ──
+function checkPW(){
+  const pw = document.getElementById('pw-input').value;
+  if(pw === settings.password){
+    document.getElementById('lockscreen').style.display='none';
+    document.getElementById('app').style.display='flex';
+  } else {
+    document.getElementById('pw-err').style.display='block';
+    document.getElementById('pw-input').value='';
+  }
+}
+window.checkPW = checkPW;
+
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPW(); });
+
+// ── Navigation ──
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.snav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  const nav=document.getElementById(`nav-${page}`);
+  if(nav) nav.classList.add('active');
+  const mtab=document.getElementById(`mtab-${page}`);
+  if(mtab) mtab.classList.add('active');
+  const titles={dashboard:'ダッシュボード',staff:'スタッフ管理',shift:'シフト管理',results:'稼働実績',report:'報酬・集計',settings:'設定・単価'};
+  document.getElementById('page-title').textContent=titles[page]||'';
+  if(page==='dashboard') renderDashboard();
+  if(page==='shift') renderShifts();
+  if(page==='results') renderResults();
+  if(page==='report') renderReport();
+}
+window.showPage = showPage;
+
+// ── Month nav ──
+function fmtMonth(d){ return `${d.getFullYear()}年${d.getMonth()+1}月`; }
+function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+function changeMonth(d){ curMonth.setMonth(curMonth.getMonth()+d); renderDashboard(); }
+function changeShiftMonth(d){ shiftMonth.setMonth(shiftMonth.getMonth()+d); renderShifts(); }
+function changeResultMonth(d){ resultMonth.setMonth(resultMonth.getMonth()+d); renderResults(); }
+function changeReportMonth(d){ reportMonth.setMonth(reportMonth.getMonth()+d); renderReport(); }
+window.changeMonth=changeMonth; window.changeShiftMonth=changeShiftMonth;
+window.changeResultMonth=changeResultMonth; window.changeReportMonth=changeReportMonth;
+
+// ── Staff ──
+function saveStaff(){
+  const name=g('sf-name').value.trim();
+  if(!name){ notify('氏名を入力してください'); return; }
+  const data={
+    name, kana:g('sf-kana').value.trim(),
+    tel:g('sf-tel').value.trim(), note:g('sf-note').value.trim(),
+    prices:{
+      sim:+g('sf-p-sim').value||0, spo:+g('sf-p-spo').value||0,
+      hikari:+g('sf-p-hikari').value||0, home5g:+g('sf-p-home5g').value||0,
+      denki:+g('sf-p-denki').value||0, card:+g('sf-p-card').value||0,
+    },
+    createdAt: editingStaffId ? (staff[editingStaffId]?.createdAt||Date.now()) : Date.now()
+  };
+  if(editingStaffId){
+    update(ref(db,`staff/${editingStaffId}`), data);
+    notify('更新しました ✓');
+    editingStaffId=null;
+  } else {
+    push(ref(db,'staff'), data);
+    notify('スタッフを登録しました ✓');
+  }
+  clearStaffForm();
+}
+window.saveStaff=saveStaff;
+
+function clearStaffForm(){
+  ['sf-name','sf-kana','sf-tel','sf-note'].forEach(id=>g(id).value='');
+  const def=settings.defaults||{};
+  g('sf-p-sim').value=def.sim||3000; g('sf-p-spo').value=def.spo||3000;
+  g('sf-p-hikari').value=def.hikari||5000; g('sf-p-home5g').value=def.home5g||4000;
+  g('sf-p-denki').value=def.denki||2000; g('sf-p-card').value=def.card||2000;
+  editingStaffId=null;
+}
+window.clearStaffForm=clearStaffForm;
+
+function editStaff(id){
+  const s=staff[id]; if(!s) return;
+  editingStaffId=id;
+  g('sf-name').value=s.name||''; g('sf-kana').value=s.kana||'';
+  g('sf-tel').value=s.tel||''; g('sf-note').value=s.note||'';
+  g('sf-p-sim').value=s.prices?.sim||0; g('sf-p-spo').value=s.prices?.spo||0;
+  g('sf-p-hikari').value=s.prices?.hikari||0; g('sf-p-home5g').value=s.prices?.home5g||0;
+  g('sf-p-denki').value=s.prices?.denki||0; g('sf-p-card').value=s.prices?.card||0;
+  showPage('staff');
+  notify('編集モード: 変更後「登録する」を押してください');
+}
+window.editStaff=editStaff;
+
+function deleteStaff(id){
+  if(!confirm('このスタッフを削除しますか？')) return;
+  remove(ref(db,`staff/${id}`));
+  notify('削除しました');
+}
+window.deleteStaff=deleteStaff;
+
+function renderStaffList(){
+  const tbody=g('staff-list');
+  if(!tbody) return;
+  const list=Object.entries(staff);
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">スタッフが登録されていません</td></tr>'; return; }
+  tbody.innerHTML=list.map(([id,s])=>`
+    <tr>
+      <td><strong>${esc(s.name)}</strong><br><small style="color:var(--text3)">${esc(s.kana||'')}</small></td>
+      <td>${esc(s.tel||'-')}</td>
+      <td>${esc(s.note||'-')}</td>
+      <td class="num">¥${fmt(s.prices?.sim||0)}</td>
+      <td class="num">¥${fmt(s.prices?.hikari||0)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="editStaff('${id}')">編集</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStaff('${id}')">削除</button>
+      </td>
+    </tr>`).join('');
+}
+
+function updateStaffSelects(){
+  const selects=['sh-staff','res-filter-staff'];
+  selects.forEach(id=>{
+    const el=g(id); if(!el) return;
+    const cur=el.value;
+    el.innerHTML=`<option value="">${id==='res-filter-staff'?'全スタッフ':'選択してください'}</option>`;
+    Object.entries(staff).forEach(([id2,s])=>{
+      el.innerHTML+=`<option value="${id2}" ${cur===id2?'selected':''}>${esc(s.name)}</option>`;
+    });
+  });
+}
+
+// ── Shifts ──
+function saveShift(){
+  const staffId=g('sh-staff').value;
+  const date=g('sh-date').value;
+  if(!staffId||!date){ notify('スタッフと日付を選択してください'); return; }
+  push(ref(db,'shifts'),{
+    staffId, date,
+    staffName: staff[staffId]?.name||'',
+    location: g('sh-location').value.trim(),
+    type: g('sh-type').value,
+    note: g('sh-note').value.trim(),
+    worked: false,
+    createdAt: Date.now()
+  });
+  ['sh-location','sh-note'].forEach(id=>g(id).value='');
+  notify('シフトを登録しました ✓');
+}
+window.saveShift=saveShift;
+
+function toggleWorked(id, val){
+  update(ref(db,`shifts/${id}`),{worked:val});
+}
+window.toggleWorked=toggleWorked;
+
+function deleteShift(id){
+  if(!confirm('削除しますか？')) return;
+  remove(ref(db,`shifts/${id}`));
+}
+window.deleteShift=deleteShift;
+
+function renderShifts(){
+  const el=g('shift-month-label'); if(el) el.textContent=fmtMonth(shiftMonth);
+  const tbody=g('shift-list'); if(!tbody) return;
+  const mk=monthKey(shiftMonth);
+  const list=Object.entries(shifts).filter(([,s])=>s.date&&s.date.startsWith(mk))
+    .sort((a,b)=>a[1].date.localeCompare(b[1].date));
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">この月のシフトはありません</td></tr>'; return; }
+  tbody.innerHTML=list.map(([id,s])=>`
+    <tr>
+      <td>${fmtDate(s.date)}</td>
+      <td><strong>${esc(s.staffName)}</strong></td>
+      <td>${esc(s.location||'-')}</td>
+      <td><span style="font-size:12px;padding:2px 8px;border-radius:4px;background:var(--bg3)">${s.type||'通常'}</span></td>
+      <td><input type="checkbox" ${s.worked?'checked':''} onchange="toggleWorked('${id}',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)"></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteShift('${id}')">削除</button></td>
+    </tr>`).join('');
+}
+
+// ── Results ──
+function renderResults(){
+  const el=g('result-month-label'); if(el) el.textContent=fmtMonth(resultMonth);
+  const tbody=g('results-body'); if(!tbody) return;
+  const mk=monthKey(resultMonth);
+  const sf=g('res-filter-staff')?.value||'';
+  const list=Object.entries(results)
+    .filter(([,r])=>r.date&&r.date.startsWith(mk)&&(!sf||r.staffId===sf))
+    .sort((a,b)=>a[1].date.localeCompare(b[1].date));
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:var(--text3);padding:20px;">データがありません</td></tr>'; return; }
+  tbody.innerHTML=list.map(([,r])=>`
+    <tr>
+      <td>${fmtDate(r.date)}</td>
+      <td>${esc(r.staffName||'-')}</td>
+      <td>${esc(r.location||'-')}</td>
+      <td style="font-size:11px">${r.checkIn||'-'}</td>
+      <td style="font-size:11px">${r.checkOut||'-'}</td>
+      <td class="num">${r.products?.sim||0}</td>
+      <td class="num">${r.products?.spo||0}</td>
+      <td class="num">${r.products?.hikari||0}</td>
+      <td class="num">${r.products?.home5g||0}</td>
+      <td class="num">${r.products?.denki||0}</td>
+      <td class="num">${r.products?.card||0}</td>
+      <td class="num">¥${fmt(r.expense||0)}</td>
+      <td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${esc(r.memo||'')}</td>
+    </tr>`).join('');
+}
+window.renderResults=renderResults;
+
+// ── Dashboard ──
+function renderDashboard(){
+  const el=g('cur-month'); if(el) el.textContent=fmtMonth(curMonth);
+  const mk=monthKey(curMonth);
+  const monthResults=Object.values(results).filter(r=>r.date&&r.date.startsWith(mk));
+  // totals
+  let totalSales=0, totalExpense=0, workedDays=new Set();
+  const prodTotals={sim:0,spo:0,hikari:0,home5g:0,denki:0,card:0};
+  monthResults.forEach(r=>{
+    workedDays.add(r.staffId+'_'+r.date);
+    PRODUCTS.forEach(p=>{ const n=r.products?.[p]||0; prodTotals[p]+=n; });
+    totalExpense+=r.expense||0;
+    const s=staff[r.staffId];
+    if(s) PRODUCTS.forEach(p=>{ totalSales+=(r.products?.[p]||0)*(s.prices?.[p]||0); });
+  });
+  const totalCount=PRODUCTS.reduce((s,p)=>s+prodTotals[p],0);
+  const statsEl=g('dash-stats');
+  if(statsEl) statsEl.innerHTML=`
+    <div class="stat-card"><div class="label">総獲得件数</div><div class="val">${totalCount}</div><div class="sub">件</div></div>
+    <div class="stat-card"><div class="label">稼働日数延べ</div><div class="val">${workedDays.size}</div><div class="sub">日</div></div>
+    <div class="stat-card"><div class="label">報酬合計</div><div class="val" style="font-size:18px">¥${fmt(totalSales)}</div><div class="sub">経費 ¥${fmt(totalExpense)}</div></div>`;
+
+  const prodEl=g('dash-products');
+  if(prodEl) prodEl.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:10px;">
+    ${PRODUCTS.map(p=>`<div style="display:flex;align-items:center;gap:8px;background:var(--bg3);padding:8px 14px;border-radius:8px;">
+      <span class="badge badge-${p==='home5g'?'home5g':p}">${PROD_LABELS[p]}</span>
+      <span style="font-weight:700;font-size:18px">${prodTotals[p]}</span><span style="color:var(--text3);font-size:11px">件</span>
+    </div>`).join('')}
+  </div>`;
+
+  // Staff breakdown
+  const staffTotals={};
+  monthResults.forEach(r=>{
+    if(!staffTotals[r.staffId]) staffTotals[r.staffId]={days:new Set(),count:0,reward:0,name:r.staffName||''};
+    staffTotals[r.staffId].days.add(r.date);
+    const s=staff[r.staffId];
+    PRODUCTS.forEach(p=>{
+      const n=r.products?.[p]||0;
+      staffTotals[r.staffId].count+=n;
+      if(s) staffTotals[r.staffId].reward+=n*(s.prices?.[p]||0);
+    });
+  });
+  const tbody=g('dash-staff-body');
+  if(tbody){
+    const list=Object.entries(staffTotals);
+    if(!list.length){ tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">データなし</td></tr>'; return; }
+    tbody.innerHTML=list.sort((a,b)=>b[1].reward-a[1].reward).map(([,v])=>`
+      <tr>
+        <td><strong>${esc(v.name)}</strong></td>
+        <td class="num">${v.days.size}日</td>
+        <td class="num">${v.count}件</td>
+        <td class="num" style="color:var(--accent)">¥${fmt(v.reward)}</td>
+      </tr>`).join('');
+  }
+}
+
+// ── Report ──
+function renderReport(){
+  const el=g('report-month-label'); if(el) el.textContent=fmtMonth(reportMonth);
+  const cont=g('report-content'); if(!cont) return;
+  const mk=monthKey(reportMonth);
+  const monthResults=Object.values(results).filter(r=>r.date&&r.date.startsWith(mk));
+  if(!Object.keys(staff).length){ cont.innerHTML='<div class="card" style="color:var(--text2);text-align:center;padding:30px;">スタッフが登録されていません</div>'; return; }
+
+  cont.innerHTML=Object.entries(staff).map(([sid,s])=>{
+    const sResults=monthResults.filter(r=>r.staffId===sid);
+    if(!sResults.length) return `<div class="card"><div class="card-title">👤 ${esc(s.name)}</div><div style="color:var(--text3);font-size:13px;">この月の実績なし</div></div>`;
+    const prodCount={sim:0,spo:0,hikari:0,home5g:0,denki:0,card:0};
+    let totalReward=0, totalExpense=0;
+    sResults.forEach(r=>{
+      PRODUCTS.forEach(p=>{ prodCount[p]+=(r.products?.[p]||0); });
+      totalExpense+=r.expense||0;
+    });
+    PRODUCTS.forEach(p=>{ totalReward+=prodCount[p]*(s.prices?.[p]||0); });
+    const totalCount=PRODUCTS.reduce((s2,p)=>s2+prodCount[p],0);
+    return `<div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span>👤 ${esc(s.name)}</span>
+        <span style="color:var(--accent);font-size:15px;font-weight:700">¥${fmt(totalReward)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+        ${PRODUCTS.map(p=>`<div style="background:var(--bg3);padding:8px 10px;border-radius:8px;text-align:center;">
+          <div class="badge badge-${p==='home5g'?'home5g':p}" style="margin-bottom:4px">${PROD_LABELS[p]}</div>
+          <div style="font-weight:700">${prodCount[p]}件</div>
+          <div style="font-size:11px;color:var(--text3)">¥${fmt(prodCount[p]*(s.prices?.[p]||0))}</div>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);">
+        <span style="color:var(--text2)">総獲得件数</span><strong>${totalCount}件</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;">
+        <span style="color:var(--text2)">別途経費</span><strong>¥${fmt(totalExpense)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);font-size:15px;">
+        <span style="font-weight:700">報酬合計（経費込）</span>
+        <strong style="color:var(--accent)">¥${fmt(totalReward+totalExpense)}</strong>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Settings ──
+function loadSettingsForm(){
+  const d=settings.defaults||{};
+  ['sim','spo','hikari','home5g','denki','card'].forEach(p=>{
+    const el=g(`def-${p}`); if(el) el.value=d[p]||0;
+  });
+  renderLocations();
+}
+
+function saveDefaults(){
+  const d={};
+  ['sim','spo','hikari','home5g','denki','card'].forEach(p=>{ d[p]=+g(`def-${p}`).value||0; });
+  update(ref(db,'settings'),{defaults:d});
+  notify('デフォルト単価を保存しました ✓');
+}
+window.saveDefaults=saveDefaults;
+
+function changePW(){
+  const old=g('pw-old').value, nw=g('pw-new').value;
+  if(old!==settings.password){ g('pw-msg').innerHTML='<span style="color:var(--red)">現在のパスワードが違います</span>'; return; }
+  if(!nw||nw.length<4){ g('pw-msg').innerHTML='<span style="color:var(--red)">4文字以上で設定してください</span>'; return; }
+  update(ref(db,'settings'),{password:nw});
+  settings.password=nw;
+  g('pw-msg').innerHTML='<span style="color:var(--green)">変更しました ✓</span>';
+  g('pw-old').value=''; g('pw-new').value='';
+}
+window.changePW=changePW;
+
+function addLocation(){
+  const val=g('loc-input').value.trim(); if(!val) return;
+  const locs=[...(settings.locations||[]), val];
+  update(ref(db,'settings'),{locations:locs});
+  g('loc-input').value='';
+}
+window.addLocation=addLocation;
+
+function removeLocation(i){
+  const locs=[...(settings.locations||[])];
+  locs.splice(i,1);
+  update(ref(db,'settings'),{locations:locs});
+}
+window.removeLocation=removeLocation;
+
+function renderLocations(){
+  const el=g('locations-list'); if(!el) return;
+  const locs=settings.locations||[];
+  el.innerHTML=locs.map((l,i)=>`<div style="display:flex;align-items:center;gap:6px;background:var(--bg3);padding:5px 10px;border-radius:20px;font-size:13px;">
+    ${esc(l)}<button onclick="removeLocation(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1;">✕</button>
+  </div>`).join('')||'<span style="color:var(--text3);font-size:13px;">まだ登録がありません</span>';
+}
+
+// ── Utils ──
+function g(id){ return document.getElementById(id); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(n){ return Math.round(n).toLocaleString('ja-JP'); }
+function fmtDate(s){ if(!s) return '-'; const [y,m,d]=s.split('-'); return `${parseInt(m)}/${parseInt(d)}`; }
+function notify(msg){
+  const el=g('notif'); el.textContent=msg; el.style.transform='translateX(-50%) translateY(0)';
+  setTimeout(()=>el.style.transform='translateX(-50%) translateY(80px)',2500);
+}
+
+// ── Init ──
+const today=new Date();
+g('sh-date').valueAsDate=today;
+g('cur-month').textContent=fmtMonth(curMonth);
+g('shift-month-label').textContent=fmtMonth(shiftMonth);
+g('result-month-label').textContent=fmtMonth(resultMonth);
+g('report-month-label').textContent=fmtMonth(reportMonth);
+</script>
+</body>
+</html>
