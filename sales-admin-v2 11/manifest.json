@@ -1,0 +1,15 @@
+{
+  "name": "営業管理システム",
+  "short_name": "営業管理",
+  "description": "営業代理店の管理アプリ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0e0a1f",
+  "theme_color": "#0e0a1f",
+  "orientation": "portrait-primary",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
